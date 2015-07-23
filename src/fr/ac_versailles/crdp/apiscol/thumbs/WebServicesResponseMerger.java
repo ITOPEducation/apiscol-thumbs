@@ -176,7 +176,8 @@ public class WebServicesResponseMerger {
 		XPathExpression exp;
 		NodeList linkNodes = null;
 		try {
-			exp = xpath.compile("/atom:entry/atom:content/apiscol:resources/apiscol:resource");
+			exp = xpath
+					.compile("/atom:entry/atom:content/apiscol:resources/apiscol:resource");
 			linkNodes = (NodeList) exp.evaluate(packResponse,
 					XPathConstants.NODESET);
 		} catch (XPathExpressionException e) {
@@ -306,6 +307,11 @@ public class WebServicesResponseMerger {
 					XPathConstants.NODESET);
 		} catch (XPathExpressionException e) {
 			e.printStackTrace();
+			return;
+		} catch (Exception e) {
+			// TODO: handle exception
+			e.printStackTrace();
+			return;
 		}
 
 		for (int j = 0; j < linkNodes.getLength(); j++) {
