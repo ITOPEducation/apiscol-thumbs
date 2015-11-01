@@ -40,7 +40,6 @@ public class ResourceDirectoryInterface {
 
 	public static boolean storeAndResizeThumb(String thumbId, String imageUrl) {
 		URL url;
-		System.out.println("***" + imageUrl);
 		try {
 			url = new URL(imageUrl);
 		} catch (MalformedURLException e1) {
