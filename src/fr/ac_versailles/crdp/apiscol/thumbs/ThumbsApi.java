@@ -84,7 +84,6 @@ public class ThumbsApi extends ApiscolApi {
 	private static Client client;
 	private static WebResource contentWebServiceResource;
 	private static WebResource metadataWebServiceResource;
-	private static WebResource packWebServiceResource;
 	private static URI contentWebserviceUrl;
 	private static ScheduledExecutorService delayedThumbChoiceExecutor = Executors
 			.newSingleThreadScheduledExecutor();
@@ -133,7 +132,6 @@ public class ThumbsApi extends ApiscolApi {
 		client = Client.create();
 
 		URI metadataWebserviceUrl = null;
-		URI packWebserviceUrl = null;
 		try {
 			contentWebserviceUrl = new URI(getProperty(
 					ParametersKeys.contentWebserviceUrl, context));
@@ -146,18 +144,11 @@ public class ThumbsApi extends ApiscolApi {
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
-		try {
-			packWebserviceUrl = new URI(getProperty(
-					ParametersKeys.packWebserviceUrl, context));
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+
 		contentWebServiceResource = client.resource(UriBuilder.fromUri(
 				contentWebserviceUrl).build());
 		metadataWebServiceResource = client.resource(UriBuilder.fromUri(
 				metadataWebserviceUrl).build());
-		packWebServiceResource = client.resource(UriBuilder.fromUri(
-				packWebserviceUrl).build());
 
 	}
 
@@ -207,8 +198,6 @@ public class ThumbsApi extends ApiscolApi {
 			logger.error("The metadata web service was not able to send response : "
 					+ error);
 		}
-		String aggregationLevel = WebServicesResponseMerger
-				.extractCategoryFromMetadataRepresentation(metaResponse);
 
 		/*
 		 * first ask meta service for the whole lom file
@@ -228,92 +217,24 @@ public class ThumbsApi extends ApiscolApi {
 		 * IF IT IS A LEARNING OBJECT, ask the content service for contents with
 		 * desired metadata
 		 */
-		if (aggregationLevel.trim().equals("learning object")) {
-			MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
-			queryParams.add("mdid", metadataId);
-			Document contentFirstResponse = null;
-			ClientResponse contentWebServiceFirstResponse = contentWebServiceResource
-					.path("resource").queryParams(queryParams)
-					.accept(MediaType.APPLICATION_XML_TYPE)
-					.get(ClientResponse.class);
-			if (contentWebServiceFirstResponse.getStatus() == Status.OK
-					.getStatusCode()) {
-				contentFirstResponse = contentWebServiceFirstResponse
-						.getEntity(Document.class);
-				addThumbsFromContent(thumbsList, contentFirstResponse);
-			} else {
-				String error = contentWebServiceFirstResponse
-						.getEntity(String.class);
-				logger.error("The content web service was not able to send first response : "
-						+ error);
+		MultivaluedMap<String, String> queryParams = new MultivaluedMapImpl();
+		queryParams.add("mdid", metadataId);
+		Document contentFirstResponse = null;
+		ClientResponse contentWebServiceFirstResponse = contentWebServiceResource
+				.path("resource").queryParams(queryParams)
+				.accept(MediaType.APPLICATION_XML_TYPE)
+				.get(ClientResponse.class);
+		if (contentWebServiceFirstResponse.getStatus() == Status.OK
+				.getStatusCode()) {
+			contentFirstResponse = contentWebServiceFirstResponse
+					.getEntity(Document.class);
+			addThumbsFromContent(thumbsList, contentFirstResponse);
+		} else {
+			String error = contentWebServiceFirstResponse
+					.getEntity(String.class);
+			logger.error("The content web service was not able to send first response : "
+					+ error);
 
-			}
-
-		}
-		/*
-		 * IF IT IS A LEARNING OBJECT, ask the pack service for contents list
-		 */
-		if (aggregationLevel.trim().equals("lesson")) {
-			String packLink = WebServicesResponseMerger
-					.extractContentLinkFromMetadataRepresentation(metaResponse);
-			if (!packLink
-					.startsWith(packWebServiceResource.getURI().toString()))
-				logger.error("This packages repository is not handled by this thumb web service :"
-						+ packLink);
-			else {
-				String manifestId = packLink.replace(packWebServiceResource
-						.getURI().toString() + "/manifest/", "");
-				Document packResponse = null;
-				ClientResponse packWebServiceResponse = packWebServiceResource
-						.path("manifest").path(manifestId)
-						.queryParam("desc", "true")
-						.accept(MediaType.APPLICATION_XML_TYPE)
-						.get(ClientResponse.class);
-				if (packWebServiceResponse.getStatus() == Status.OK
-						.getStatusCode()) {
-					packResponse = packWebServiceResponse
-							.getEntity(Document.class);
-					ArrayList<String> resourcesLinks = WebServicesResponseMerger
-							.extractContentLinksFromPackageRepresentation(packResponse);
-					Iterator<String> it = resourcesLinks.iterator();
-					while (it.hasNext()) {
-						String contentLink = (String) it.next();
-						if (!contentLink.startsWith(contentWebserviceUrl
-								.toString())) {
-							logger.error("This content url is not handled by this metadata instance : "
-									+ contentLink);
-							continue;
-						}
-						String contentId = contentLink.replace(
-								contentWebserviceUrl.toString() + "/resource/",
-								"");
-						Document contentFirstResponse = null;
-						ClientResponse contentWebServiceFirstResponse = contentWebServiceResource
-								.path("resource").path(contentId)
-								.accept(MediaType.APPLICATION_XML_TYPE)
-								.get(ClientResponse.class);
-						if (contentWebServiceFirstResponse.getStatus() == Status.OK
-								.getStatusCode()) {
-							contentFirstResponse = contentWebServiceFirstResponse
-									.getEntity(Document.class);
-							addThumbsFromContent(thumbsList,
-									contentFirstResponse);
-						} else {
-							String error = contentWebServiceFirstResponse
-									.getEntity(String.class);
-							logger.error("The content web service was not able to send first response : "
-									+ error);
-
-						}
-					}
-				} else {
-					String error = packWebServiceResponse
-							.getEntity(String.class);
-					logger.error("The pack web service was not able to send response : "
-							+ error);
-
-				}
-			}
 		}
 
 		return thumbsList;
