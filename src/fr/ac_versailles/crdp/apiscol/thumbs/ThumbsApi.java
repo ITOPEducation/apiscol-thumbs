@@ -317,7 +317,12 @@ public class ThumbsApi extends ApiscolApi {
 			@QueryParam(value = "src") final String imageUrl,
 			@DefaultValue("false") @QueryParam(value = "auto") final String auto,
 			@DefaultValue(DEFAULT_STATUS) @QueryParam(value = "status") final String status)
-			throws InvalidImageUrlException, InvalidEtagException {
+			throws InvalidImageUrlException, InvalidEtagException,
+			UnknownMetadataException {
+		if (StringUtils.isEmpty(metadataId)) {
+			throw new UnknownMetadataException(
+					"The provided metadata id is empty");
+		}
 		String requestedFormat = guessRequestedFormat(request, format);
 		String providedEtag = request.getHeader(HttpHeaders.IF_MATCH);
 		takeAndReleaseGlobalLock();
@@ -329,8 +334,10 @@ public class ThumbsApi extends ApiscolApi {
 				logger.info(String
 						.format("Entering critical section with mutual exclusion for metadata %s",
 								metadataId));
-				checkFreshness(providedEtag, metadataId, status);
 				Boolean autoParam = StringUtils.equals(auto, "true");
+				if (!autoParam)
+					checkFreshness(providedEtag, metadataId, status);
+
 				String thumbId = getThumbId(metadataId, status);
 				String url = "";
 				String bestUrl;
