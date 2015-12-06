@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!DOCTYPE project>
-<project default="ask" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
+<project default="compile" basedir="." xmlns:ivy="antlib:org.apache.ivy.ant">
 	<taskdef name="if" classname="net.sf.antcontrib.logic.IfTask" />
 
 	<property name="workspace.dir" value="${basedir}/../..">
@@ -30,28 +30,22 @@
 			<include name="*.jar" />
 		</fileset>
 	</path>
-	<target name="ask">
-		<input message="Build apiscol thumbs ?" validargs="true,false" addproperty="deploy-thumbs" defaultvalue="true" />
-		<if>
-			<equals arg1="${deploy-thumbs}" arg2="true" />
-			<then>
-				<antcall target="compile" />
-			</then>
-		</if>
-	</target>
 	<target name="clean">
-		<delete includeemptydirs="true" failonerror="false"  excludes="**/log4j.properties">
+		<delete includeemptydirs="true" failonerror="false"
+			excludes="**/log4j.properties">
 			<fileset dir="${build.dir}" includes="**/*" />
 		</delete>
 	</target>
 	<target name="resolve" depends="clean">
 		<ivy:resolve file="${ivy.file}" conf="thumbs">
 		</ivy:resolve>
-		<ivy:retrieve sync="true" type="jar,bundle" pattern="${libs.dir}/[artifact]-[revision].[ext]" conf="thumbs" />
+		<ivy:retrieve sync="true" type="jar,bundle"
+			pattern="${libs.dir}/[artifact]-[revision].[ext]" conf="thumbs" />
 	</target>
 	<target name="compile" depends="resolve">
 		<mkdir dir="${build.dir}" />
-		<javac srcdir="${src.dir}" destdir="${build.dir}" includeantruntime="false">
+		<javac srcdir="${src.dir}" destdir="${build.dir}"
+			includeantruntime="false">
 			<classpath>
 				<fileset dir="${libs.dir}">
 					<include name="*.jar" />
@@ -60,7 +54,8 @@
 				</path>
 			</classpath>
 		</javac>
-		<copyfile dest="${build.dir}/log4j.properties" src="${src.dir}/log4j.properties"/>
+		<copyfile dest="${build.dir}/log4j.properties" src="${src.dir}/log4j.properties" />
+		<copyfile dest="${build.dir}/log4j.eclipse.properties" src="${src.dir}/log4j.eclipse.properties" />
 	</target>
 
 </project>
