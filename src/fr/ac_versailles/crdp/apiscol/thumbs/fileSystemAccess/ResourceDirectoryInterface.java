@@ -19,11 +19,12 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
-import com.google.common.base.Function;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 
 import fr.ac_versailles.crdp.apiscol.utils.FileUtils;
+import fr.ac_versailles.crdp.apiscol.utils.LogUtility;
 
 public class ResourceDirectoryInterface {
 
@@ -31,6 +32,7 @@ public class ResourceDirectoryInterface {
 	public static final int MAX_THUMB_DIMENSION = 128;
 	private static boolean initialized = false;
 	private static String fileRepoPath;
+	private static Logger logger;
 
 	public static boolean isInitialized() {
 		return initialized;
@@ -39,6 +41,7 @@ public class ResourceDirectoryInterface {
 	public static void initialize(String path) {
 		fileRepoPath = path;
 		ignoreSSl();
+		initializeLogger();
 	}
 
 	private static void ignoreSSl() {
@@ -124,11 +127,29 @@ public class ResourceDirectoryInterface {
 	}
 
 	public static boolean eraseThumb(String thumbId) {
-		File outputFile = new File(getFilePath(thumbId));
-		if (outputFile.exists())
-			return outputFile.delete();
-		else
+		File thumbFile = new File(getFilePath(thumbId));
+		File parent = thumbFile.getParentFile();
+		File grandParent = parent.getParentFile();
+		File grandGrandParent = grandParent.getParentFile();
+		boolean success = true;
+		if (thumbFile != null && thumbFile.exists()) {
+			success &= thumbFile.delete();
+			if (success && parent.list().length == 0) {
+				success &= FileUtils.deleteDir(parent);
+				if (success && grandParent.list().length == 0) {
+					success &= FileUtils.deleteDir(grandParent);
+					if (success && grandGrandParent.list().length == 0) {
+						success &= FileUtils.deleteDir(grandGrandParent);
+					}
+				}
+			}
+			return success;
+		} else {
+			logger.warn(String
+					.format("The file %s to be deleted is null or does not exist for thumb %s",
+							thumbFile.getAbsoluteFile(), thumbId));
 			return false;
+		}
 	}
 
 	public static boolean storeAndResizeCustomThumb(String thumbId,
@@ -191,6 +212,13 @@ public class ResourceDirectoryInterface {
 			}
 		}
 		return res;
+	}
+
+	private static void initializeLogger() {
+		if (logger == null)
+			logger = LogUtility.createLogger(ResourceDirectoryInterface.class
+					.getCanonicalName());
+
 	}
 
 }
