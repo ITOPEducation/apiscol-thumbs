@@ -175,9 +175,10 @@ public class ThumbsApi extends ApiscolApi {
 
 		HashMap<String, Point> thumbsList = getThumbSuggestions(metadataId,
 				true);
-		return Response.ok(
-				rb.getThumbsListRepresentation(thumbsList.keySet(), metadataId,
-						DEFAULT_STATUS, uriInfo)).build();
+		return Response
+				.ok(rb.getThumbsListRepresentation(thumbsList.keySet(),
+						metadataId, DEFAULT_STATUS, uriInfo))
+				.type(rb.getMediaType()).build();
 	}
 
 	private HashMap<String, Point> getThumbSuggestions(String metadataId,
@@ -384,7 +385,7 @@ public class ThumbsApi extends ApiscolApi {
 				.getRepresentationBuilder(requestedFormat, context);
 		return Response
 				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).build();
+						status)).type(rb.getMediaType()).build();
 	}
 
 	private void registerUrl(String url, String metadataId, String status)
@@ -443,7 +444,7 @@ public class ThumbsApi extends ApiscolApi {
 				.getRepresentationBuilder(requestedFormat, context);
 		return Response
 				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).build();
+						status)).type(rb.getMediaType()).build();
 	}
 
 	@POST
@@ -488,7 +489,7 @@ public class ThumbsApi extends ApiscolApi {
 						context);
 		return Response
 				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).build();
+						status)).type(rb.getMediaType()).build();
 
 	}
 

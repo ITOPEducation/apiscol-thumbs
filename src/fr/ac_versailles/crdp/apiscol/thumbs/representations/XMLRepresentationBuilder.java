@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -121,6 +122,11 @@ public class XMLRepresentationBuilder extends
 			linkElement.setAttribute("href", thumbImageUri);
 		thumbElement.appendChild(linkElement);
 
+	}
+
+	@Override
+	public MediaType getMediaType() {
+		return MediaType.APPLICATION_XML_TYPE;
 	}
 
 }
