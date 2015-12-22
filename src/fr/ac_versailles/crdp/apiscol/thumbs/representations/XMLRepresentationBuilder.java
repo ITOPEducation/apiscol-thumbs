@@ -1,5 +1,6 @@
 package fr.ac_versailles.crdp.apiscol.thumbs.representations;
 
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -22,7 +23,7 @@ public class XMLRepresentationBuilder extends
 		AbstractRepresentationBuilder<Document> {
 
 	@Override
-	public Document getThumbsInformationForMetadata(UriInfo uriInfo,
+	public Document getThumbsInformationForMetadata(URI baseUri,
 			String metadataId, String status) {
 		Document thumbs = createXMLDocument();
 
@@ -33,7 +34,7 @@ public class XMLRepresentationBuilder extends
 
 		Element thumbElement = thumbs.createElement("thumb");
 		thumbElement.setAttribute("status", status);
-		thumbElement.setTextContent(getFileUri(uriInfo, metadataId, status));
+		thumbElement.setTextContent(getFileUri(baseUri, metadataId, status));
 		rootElement.appendChild(thumbElement);
 
 		thumbs.appendChild(rootElement);
@@ -68,7 +69,7 @@ public class XMLRepresentationBuilder extends
 
 	@Override
 	public Document getThumbsListRepresentation(Set<String> thumbsList,
-			String metadataId, String status, UriInfo uriInfo) {
+			String metadataId, String status, URI baseUri) {
 		Document thumbs = createXMLDocument();
 		Element rootElement = thumbs.createElement("thumbs");
 		rootElement.setAttribute("mdid", metadataId);
@@ -84,14 +85,14 @@ public class XMLRepresentationBuilder extends
 			rootElement.appendChild(thumbElement);
 			thumbElement.appendChild(linkElement);
 		}
-		appendLinkElementForMetadata(metadataId, rootElement, status, uriInfo);
+		appendLinkElementForMetadata(metadataId, rootElement, status, baseUri);
 		XMLUtils.addNameSpaces(thumbs, UsedNamespaces.APISCOL);
 		return thumbs;
 
 	}
 
 	@Override
-	public Document getThumbsRepresentation(UriInfo uriInfo,
+	public Document getThumbsRepresentation(URI baseUri,
 			List<String> metadataList, String status) {
 		Document thumbs = createXMLDocument();
 		Element rootElement = thumbs.createElement("thumbs");
@@ -99,7 +100,7 @@ public class XMLRepresentationBuilder extends
 		while (it.hasNext()) {
 			String metadataId = (String) it.next();
 			appendLinkElementForMetadata(metadataId, rootElement, status,
-					uriInfo);
+					baseUri);
 
 		}
 		thumbs.appendChild(rootElement);
@@ -108,7 +109,7 @@ public class XMLRepresentationBuilder extends
 	}
 
 	private void appendLinkElementForMetadata(String metadataId,
-			Element rootElement, String status, UriInfo uriInfo) {
+			Element rootElement, String status, URI baseUri) {
 		Element thumbElement = rootElement.getOwnerDocument().createElement(
 				"thumb");
 		thumbElement.setAttribute("version",
@@ -117,7 +118,7 @@ public class XMLRepresentationBuilder extends
 		rootElement.appendChild(thumbElement);
 		Element linkElement = rootElement.getOwnerDocument().createElementNS(
 				UsedNamespaces.APISCOL.getUri(), "link");
-		String thumbImageUri = getFileUri(uriInfo, metadataId, status);
+		String thumbImageUri = getFileUri(baseUri, metadataId, status);
 		if (StringUtils.isNotEmpty(thumbImageUri))
 			linkElement.setAttribute("href", thumbImageUri);
 		thumbElement.appendChild(linkElement);

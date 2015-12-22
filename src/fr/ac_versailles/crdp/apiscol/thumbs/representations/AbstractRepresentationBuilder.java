@@ -1,6 +1,6 @@
 package fr.ac_versailles.crdp.apiscol.thumbs.representations;
 
-import javax.ws.rs.core.UriInfo;
+import java.net.URI;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -25,19 +25,17 @@ public abstract class AbstractRepresentationBuilder<T> implements
 
 	}
 
-	protected String getFileUri(UriInfo uriInfo, String metadataId,
-			String status) {
+	protected String getFileUri(URI baseUri, String metadataId, String status) {
 		String thumbId = ThumbsApi.getThumbId(metadataId, status);
-		String fileName = ResourceDirectoryInterface
-				.getFileName(thumbId);
+		String fileName = ResourceDirectoryInterface.getFileName(thumbId);
 		if (!StringUtils.isEmpty(fileName))
-			return convertToUrl(fileName, uriInfo);
+			return convertToUrl(fileName, baseUri);
 		else
 			return StringUtils.EMPTY;
 	}
 
-	private String convertToUrl(String imageName, UriInfo uriInfo) {
-		return (new StringBuilder().append(uriInfo.getBaseUri())
+	private String convertToUrl(String imageName, URI baseUri) {
+		return (new StringBuilder().append(baseUri).append('/')
 				.append(FileUtils.getFilePathHierarchy("files", imageName)))
 				.toString();
 	}

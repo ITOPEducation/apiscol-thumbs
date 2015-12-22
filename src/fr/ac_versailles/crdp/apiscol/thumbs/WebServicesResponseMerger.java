@@ -29,6 +29,7 @@ import org.w3c.dom.NodeList;
 import com.sun.jersey.api.client.WebResource;
 
 import fr.ac_versailles.crdp.apiscol.UsedNamespaces;
+import fr.ac_versailles.crdp.apiscol.restClient.LanWebResource;
 import fr.ac_versailles.crdp.apiscol.utils.LogUtility;
 
 public class WebServicesResponseMerger {
@@ -197,7 +198,7 @@ public class WebServicesResponseMerger {
 
 	public static void addThumbsFromMetadata(Document lomXML,
 			HashMap<String, Point> thumbsList,
-			WebResource metadataWebServiceResource) {
+			LanWebResource metadataWebServiceResource) {
 		ArrayList<String> concatenations = new ArrayList<String>();
 		if (lomXML != null)
 			populateRecursively(exclusions, ignoreList, concatenations,
@@ -207,8 +208,10 @@ public class WebServicesResponseMerger {
 			String filePath = String.format("%s.%s", (String) it.next(), "png");
 			String url = String.format("%s%s%s", metadataWebServiceResource
 					.getURI().toString(), "/icons/st0", filePath);
+			String publicUrl = String.format("%s%s%s", metadataWebServiceResource
+					.getWanUrl().toString(), "/icons/st0", filePath);
 			if (iconExistOnMetaService(url)) {
-				thumbsList.put(url, new Point());
+				thumbsList.put(publicUrl, new Point());
 			}
 		}
 

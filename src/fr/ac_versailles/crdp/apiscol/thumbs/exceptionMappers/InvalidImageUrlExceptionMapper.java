@@ -7,7 +7,6 @@ import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
 import fr.ac_versailles.crdp.apiscol.thumbs.InvalidImageUrlException;
-import fr.ac_versailles.crdp.apiscol.thumbs.UnknownMetadataRepositoryException;
 
 @Provider
 public class InvalidImageUrlExceptionMapper implements

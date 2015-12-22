@@ -31,21 +31,18 @@
 		</fileset>
 	</path>
 	<target name="clean">
-		<delete includeemptydirs="true" failonerror="false"
-			excludes="**/log4j.properties">
+		<delete includeemptydirs="true" failonerror="false" excludes="**/log4j.properties">
 			<fileset dir="${build.dir}" includes="**/*" />
 		</delete>
 	</target>
 	<target name="resolve" depends="clean">
 		<ivy:resolve file="${ivy.file}" conf="thumbs">
 		</ivy:resolve>
-		<ivy:retrieve sync="true" type="jar,bundle"
-			pattern="${libs.dir}/[artifact]-[revision].[ext]" conf="thumbs" />
+		<ivy:retrieve sync="true" type="jar,bundle" pattern="${libs.dir}/[artifact]-[revision].[ext]" conf="thumbs" />
 	</target>
 	<target name="compile" depends="resolve">
 		<mkdir dir="${build.dir}" />
-		<javac srcdir="${src.dir}" destdir="${build.dir}"
-			includeantruntime="false">
+		<javac srcdir="${src.dir}" destdir="${build.dir}" debug="true"  includeantruntime="false">
 			<classpath>
 				<fileset dir="${libs.dir}">
 					<include name="*.jar" />

@@ -43,7 +43,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.lang.StringUtils;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -59,13 +58,13 @@ import com.sun.jersey.multipart.FormDataParam;
 import fr.ac_versailles.crdp.apiscol.ApiscolApi;
 import fr.ac_versailles.crdp.apiscol.ParametersKeys;
 import fr.ac_versailles.crdp.apiscol.ResourcesKeySyntax;
+import fr.ac_versailles.crdp.apiscol.restClient.LanWebResource;
 import fr.ac_versailles.crdp.apiscol.thumbs.automated.IThumbsChoiceStrategy;
 import fr.ac_versailles.crdp.apiscol.thumbs.automated.PreferenceForNotOftenUsedLargeSquaresStrategy;
 import fr.ac_versailles.crdp.apiscol.thumbs.fileSystemAccess.ResourceDirectoryInterface;
 import fr.ac_versailles.crdp.apiscol.thumbs.representations.EntitiesRepresentationBuilderFactory;
 import fr.ac_versailles.crdp.apiscol.thumbs.representations.IEntitiesRepresentationBuilder;
 import fr.ac_versailles.crdp.apiscol.transactions.KeyLock;
-import fr.ac_versailles.crdp.apiscol.utils.XMLUtils;
 
 @Path("/")
 public class ThumbsApi extends ApiscolApi {
@@ -82,9 +81,8 @@ public class ThumbsApi extends ApiscolApi {
 
 	private static boolean isInitialized = false;
 	private static Client client;
-	private static WebResource contentWebServiceResource;
-	private static WebResource metadataWebServiceResource;
-	private static URI contentWebserviceUrl;
+	private static LanWebResource contentWebServiceResource;
+	private static LanWebResource metadataWebServiceResource;
 	private static ScheduledExecutorService delayedThumbChoiceExecutor = Executors
 			.newSingleThreadScheduledExecutor();
 
@@ -131,25 +129,29 @@ public class ThumbsApi extends ApiscolApi {
 	private void createWebServiceClients(ServletContext context) {
 		client = Client.create();
 
-		URI metadataWebserviceUrl = null;
+		URI metadataWebserviceLanUrl = null;
+		URI metadataWebserviceWanUrl = null;
+		URI contentWebserviceLanUrl = null;
+		URI contentWebserviceWanUrl = null;
 		try {
-			contentWebserviceUrl = new URI(getProperty(
-					ParametersKeys.contentWebserviceUrl, context));
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-		try {
-			metadataWebserviceUrl = new URI(getProperty(
-					ParametersKeys.metadataWebserviceUrl, context));
+			contentWebserviceLanUrl = new URI(getProperty(
+					ParametersKeys.contentWebserviceLanUrl, context));
+			contentWebserviceWanUrl = new URI(getProperty(
+					ParametersKeys.contentWebserviceWanUrl, context));
+			metadataWebserviceLanUrl = new URI(getProperty(
+					ParametersKeys.metadataWebserviceLanUrl, context));
+			metadataWebserviceWanUrl = new URI(getProperty(
+					ParametersKeys.metadataWebserviceWanUrl, context));
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
 
-		contentWebServiceResource = client.resource(UriBuilder.fromUri(
-				contentWebserviceUrl).build());
-		metadataWebServiceResource = client.resource(UriBuilder.fromUri(
-				metadataWebserviceUrl).build());
-
+		contentWebServiceResource = new LanWebResource(
+				client.resource(contentWebserviceLanUrl));
+		contentWebServiceResource.setWanUrl(contentWebserviceWanUrl);
+		metadataWebServiceResource = new LanWebResource(
+				client.resource(metadataWebserviceLanUrl));
+		metadataWebServiceResource.setWanUrl(metadataWebserviceWanUrl);
 	}
 
 	@GET
@@ -162,8 +164,8 @@ public class ThumbsApi extends ApiscolApi {
 			@QueryParam(value = "format") final String format) {
 		String requestedFormat = guessRequestedFormat(request, format);
 		if (StringUtils.isEmpty(metadataId)
-				|| !metadataId.startsWith(metadataWebServiceResource.getURI()
-						.toString()))
+				|| !metadataId.startsWith(metadataWebServiceResource
+						.getWanUrl().toString()))
 			return Response
 					.status(Status.BAD_REQUEST)
 					.entity("This apiscol instance does handle iconification only for this metadata repository "
@@ -177,7 +179,7 @@ public class ThumbsApi extends ApiscolApi {
 				true);
 		return Response
 				.ok(rb.getThumbsListRepresentation(thumbsList.keySet(),
-						metadataId, DEFAULT_STATUS, uriInfo))
+						metadataId, DEFAULT_STATUS, getExternalUri()))
 				.type(rb.getMediaType()).build();
 	}
 
@@ -186,7 +188,7 @@ public class ThumbsApi extends ApiscolApi {
 		HashMap<String, Point> thumbsList = new HashMap<String, Point>();
 
 		String metadataUUID = metadataId.replace(metadataWebServiceResource
-				.getURI().toString() + "/", "");
+				.getWanUrl().toString() + "/", "");
 		Document metaResponse = null;
 		ClientResponse metadataWebServiceResponse = metadataWebServiceResource
 				.path(metadataUUID).queryParam("desc", "true")
@@ -252,26 +254,28 @@ public class ThumbsApi extends ApiscolApi {
 		 * then ask the content service for thumbs suggestions for this contents
 		 */
 		if (StringUtils.isNotEmpty(thumbLink)) {
-			String iconsPath = thumbLink.replace(
-					contentWebserviceUrl.toString(), "");
+			String iconsPath = thumbLink.replace(contentWebServiceResource
+					.getWanUrl().toString(), "");
 			Document contentSecondResponse = null;
 			ClientResponse contentWebServiceSecondResponse = contentWebServiceResource
 					.path(iconsPath).accept(MediaType.APPLICATION_XML_TYPE)
 					.get(ClientResponse.class);
 			if (contentWebServiceSecondResponse.getStatus() == Status.OK
-					.getStatusCode())
+					.getStatusCode()) {
 				contentSecondResponse = contentWebServiceSecondResponse
 						.getEntity(Document.class);
-			else {
+				WebServicesResponseMerger.addThumbsFromContent(
+						contentSecondResponse, thumbsList);
+			} else {
 				String error = contentWebServiceSecondResponse
 						.getEntity(String.class);
 				logger.warn(String
-						.format("Content web service was asked for thumbs suggestions for resource but he sent this code : %s with message : %s",
+						.format("Content web service was asked for thumbs suggestions on path %s  for resource but he sent this code : %s with message : %s",
+								iconsPath,
 								contentWebServiceSecondResponse.getStatus(),
 								error));
 			}
-			WebServicesResponseMerger.addThumbsFromContent(
-					contentSecondResponse, thumbsList);
+
 		}
 
 	}
@@ -384,8 +388,8 @@ public class ThumbsApi extends ApiscolApi {
 		IEntitiesRepresentationBuilder<?> rb = EntitiesRepresentationBuilderFactory
 				.getRepresentationBuilder(requestedFormat, context);
 		return Response
-				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).type(rb.getMediaType()).build();
+				.ok(rb.getThumbsInformationForMetadata(getExternalUri(),
+						metadataId, status)).type(rb.getMediaType()).build();
 	}
 
 	private void registerUrl(String url, String metadataId, String status)
@@ -443,8 +447,8 @@ public class ThumbsApi extends ApiscolApi {
 		IEntitiesRepresentationBuilder<?> rb = EntitiesRepresentationBuilderFactory
 				.getRepresentationBuilder(requestedFormat, context);
 		return Response
-				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).type(rb.getMediaType()).build();
+				.ok(rb.getThumbsInformationForMetadata(getExternalUri(),
+						metadataId, status)).type(rb.getMediaType()).build();
 	}
 
 	@POST
@@ -488,8 +492,8 @@ public class ThumbsApi extends ApiscolApi {
 				.getRepresentationBuilder(MediaType.APPLICATION_ATOM_XML,
 						context);
 		return Response
-				.ok(rb.getThumbsInformationForMetadata(uriInfo, metadataId,
-						status)).type(rb.getMediaType()).build();
+				.ok(rb.getThumbsInformationForMetadata(getExternalUri(),
+						metadataId, status)).type(rb.getMediaType()).build();
 
 	}
 
@@ -564,7 +568,7 @@ public class ThumbsApi extends ApiscolApi {
 		while (it.hasNext()) {
 			String metadataId = ResourcesKeySyntax
 					.removeSSL((String) it.next());
-			if (!metadataId.startsWith(metadataWebServiceResource.getURI()
+			if (!metadataId.startsWith(metadataWebServiceResource.getWanUrl()
 					.toString()))
 				throw new UnknownMetadataRepositoryException(
 						"This apiscol instance does handle iconification only for this metadata repository "
@@ -575,7 +579,7 @@ public class ThumbsApi extends ApiscolApi {
 		IEntitiesRepresentationBuilder<?> rb = EntitiesRepresentationBuilderFactory
 				.getRepresentationBuilder(requestedFormat, context);
 		Document thumbRepresentation = (Document) rb.getThumbsRepresentation(
-				uriInfo, metadataList, status);
+				getExternalUri(), metadataList, status);
 		return Response.ok(thumbRepresentation).type(MediaType.APPLICATION_XML)
 				.build();
 	}
