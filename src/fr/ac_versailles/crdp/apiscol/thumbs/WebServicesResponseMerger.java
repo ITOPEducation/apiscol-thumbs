@@ -26,8 +26,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.sun.jersey.api.client.WebResource;
-
 import fr.ac_versailles.crdp.apiscol.UsedNamespaces;
 import fr.ac_versailles.crdp.apiscol.restClient.LanWebResource;
 import fr.ac_versailles.crdp.apiscol.utils.LogUtility;

@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 public interface IEntitiesRepresentationBuilder<T> {
 
