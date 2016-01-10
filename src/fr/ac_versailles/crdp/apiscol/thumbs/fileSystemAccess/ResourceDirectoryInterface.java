@@ -86,7 +86,8 @@ public class ResourceDirectoryInterface {
 		try {
 			image = ImageIO.read(url);
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.warn("Impossible to read image data from url : " + url
+					+ " with message " + e.getMessage());
 			return false;
 		}
 
