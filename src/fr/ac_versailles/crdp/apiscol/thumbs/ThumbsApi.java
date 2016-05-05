@@ -196,7 +196,7 @@ public class ThumbsApi extends ApiscolApi {
 			metaResponse = metadataWebServiceResponse.getEntity(Document.class);
 		else {
 			String error = metadataWebServiceResponse.getEntity(String.class);
-			logger.error("The metadata web service was not able to send response : "
+			getLogger().error("The metadata web service was not able to send response : "
 					+ error);
 		}
 
@@ -233,7 +233,7 @@ public class ThumbsApi extends ApiscolApi {
 		} else {
 			String error = contentWebServiceFirstResponse
 					.getEntity(String.class);
-			logger.error("The content web service was not able to send first response : "
+			getLogger().error("The content web service was not able to send first response : "
 					+ error);
 
 		}
@@ -267,7 +267,7 @@ public class ThumbsApi extends ApiscolApi {
 			} else {
 				String error = contentWebServiceSecondResponse
 						.getEntity(String.class);
-				logger.warn(String
+				getLogger().warn(String
 						.format("Content web service was asked for thumbs suggestions on path %s  for resource but he sent this code : %s with message : %s",
 								iconsPath,
 								contentWebServiceSecondResponse.getStatus(),
@@ -283,7 +283,7 @@ public class ThumbsApi extends ApiscolApi {
 		try {
 			dataURL = new URL(lomLink);
 		} catch (MalformedURLException e1) {
-			logger.error(String.format("This string is not a valid url %s",
+			getLogger().error(String.format("This string is not a valid url %s",
 					lomLink));
 			return null;
 		}
@@ -292,7 +292,7 @@ public class ThumbsApi extends ApiscolApi {
 		try {
 			iStream = dataURL.openStream();
 		} catch (IOException e1) {
-			logger.error(String.format(
+			getLogger().error(String.format(
 					"Impossible to connect to this url url %s", lomLink));
 			return null;
 		}
@@ -334,7 +334,7 @@ public class ThumbsApi extends ApiscolApi {
 			keyLock = keyLockManager.getLock(metadataId);
 			keyLock.lock();
 			try {
-				logger.info(String
+				getLogger().info(String
 						.format("Entering critical section with mutual exclusion for metadata %s",
 								metadataId));
 				Boolean autoParam = StringUtils.equals(auto, "true");
@@ -378,7 +378,7 @@ public class ThumbsApi extends ApiscolApi {
 			if (keyLock != null) {
 				keyLock.release();
 			}
-			logger.info(String
+			getLogger().info(String
 					.format("Leaving critical section with mutual exclusion for metadata %s",
 							metadataId));
 		}
@@ -421,7 +421,7 @@ public class ThumbsApi extends ApiscolApi {
 			keyLock = keyLockManager.getLock(metadataId);
 			keyLock.lock();
 			try {
-				logger.info(String
+				getLogger().info(String
 						.format("Entering critical section with mutual exclusion for metadata %s",
 								metadataId));
 				checkFreshness(request.getHeader(HttpHeaders.IF_MATCH),
@@ -438,7 +438,7 @@ public class ThumbsApi extends ApiscolApi {
 			if (keyLock != null) {
 				keyLock.release();
 			}
-			logger.info(String
+			getLogger().info(String
 					.format("Leaving critical section with mutual exclusion for metadata %s",
 							metadataId));
 		}
@@ -466,7 +466,7 @@ public class ThumbsApi extends ApiscolApi {
 			keyLock = keyLockManager.getLock(metadataId);
 			keyLock.lock();
 			try {
-				logger.info(String
+				getLogger().info(String
 						.format("Entering critical section with mutual exclusion for metadata %s",
 								metadataId));
 				checkFreshness(request.getHeader(HttpHeaders.IF_MATCH),
@@ -482,7 +482,7 @@ public class ThumbsApi extends ApiscolApi {
 			if (keyLock != null) {
 				keyLock.release();
 			}
-			logger.info(String
+			getLogger().info(String
 					.format("Leaving critical section with mutual exclusion for metadata %s",
 							metadataId));
 		}
@@ -498,11 +498,11 @@ public class ThumbsApi extends ApiscolApi {
 	private void eraseThumb(String metadataId, String status) {
 		String thumbId = getThumbId(metadataId, status);
 		if (ResourceDirectoryInterface.eraseThumb(thumbId))
-			logger.info(String
+			getLogger().info(String
 					.format("The old thumb has been erased for metadata %s",
 							metadataId));
 		else
-			logger.info(String.format(
+			getLogger().info(String.format(
 					"There was no old thumb to erase for metadata %s",
 					metadataId));
 
@@ -558,7 +558,7 @@ public class ThumbsApi extends ApiscolApi {
 				String message = String
 						.format("The list of metadata %s is impossible to parse as JSON",
 								metadataIds);
-				logger.warn(message);
+				getLogger().warn(message);
 				throw new InvalidListOfMetadataException(message);
 			}
 		}
@@ -655,12 +655,12 @@ public class ThumbsApi extends ApiscolApi {
 			if (!automatedProcessesStop.get(metadataId))
 				try {
 
-					logger.info("Sheduled automated thumb choice N°"
+					getLogger().info("Sheduled automated thumb choice N°"
 							+ numberOfTries + " on " + maxNumberOfTries
 							+ " for metadata " + metadataId + " : try number "
 							+ numberOfTries);
 					if (askForMetadataIcons)
-						logger.info("Thumbs suggestions from Apiscol Meta will be accepted");
+						getLogger().info("Thumbs suggestions from Apiscol Meta will be accepted");
 					checkFreshness(etag, metadataId, status);
 					String url = selectMostAppropriateThumb(metadataId,
 							askForMetadataIcons);
@@ -669,7 +669,7 @@ public class ThumbsApi extends ApiscolApi {
 							registerUrl(url, metadataId, status);
 					} catch (InvalidImageUrlException e) {
 						// no usable url
-						logger.warn("The sheduled choice of thumbs was not able to handle this wrong url :"
+						getLogger().warn("The sheduled choice of thumbs was not able to handle this wrong url :"
 								+ url + " for metadata " + metadataId);
 						url = StringUtils.EMPTY;
 					}
@@ -692,19 +692,19 @@ public class ThumbsApi extends ApiscolApi {
 											TimeUnit.SECONDS);
 					}
 				} catch (InvalidEtagException e1) {
-					logger.info("canceling sheduled automated thumb choice for metadata "
+					getLogger().info("canceling sheduled automated thumb choice for metadata "
 							+ metadataId + " : the etag is not old.");
 				}
 			else
-				logger.info("canceling sheduled automated thumb choice for metadata "
+				getLogger().info("canceling sheduled automated thumb choice for metadata "
 						+ metadataId
 						+ " : the metadata reference has been destroyed.");
 		}
 	}
 
 	public static void stopExecutors() {
-		if (logger != null)
-			logger.info("Thread executors are going to be stopped for Apiscol Thumbs.");
+		if (getLogger() != null)
+			getLogger().info("Thread executors are going to be stopped for Apiscol Thumbs.");
 		if (automatedProcessesStop != null)
 			for (String key : automatedProcessesStop.keySet()) {
 				automatedProcessesStop.put(key, false);
