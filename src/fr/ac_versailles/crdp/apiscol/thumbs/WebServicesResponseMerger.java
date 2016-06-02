@@ -144,7 +144,7 @@ public class WebServicesResponseMerger {
 		}
 		if (categoryNode == null)
 			return null;
-		return categoryNode.getAttribute("term");
+		return categoryNode.getAttribute("label");
 	}
 
 	public static String extractContentLinkFromMetadataRepresentation(
@@ -206,8 +206,9 @@ public class WebServicesResponseMerger {
 			String filePath = String.format("%s.%s", (String) it.next(), "png");
 			String url = String.format("%s%s%s", metadataWebServiceResource
 					.getURI().toString(), "/icons/st0", filePath);
-			String publicUrl = String.format("%s%s%s", metadataWebServiceResource
-					.getWanUrl().toString(), "/icons/st0", filePath);
+			String publicUrl = String.format("%s%s%s",
+					metadataWebServiceResource.getWanUrl().toString(),
+					"/icons/st0", filePath);
 			if (iconExistOnMetaService(url)) {
 				thumbsList.put(publicUrl, new Point());
 			}
